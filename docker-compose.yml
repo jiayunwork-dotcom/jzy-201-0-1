@@ -1,0 +1,32 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: microwave
+      MYSQL_USER: microwave
+      MYSQL_PASSWORD: microwave
+      MYSQL_ROOT_PASSWORD: root-password
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-pmicrowave"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_DSN: microwave:microwave@tcp(mysql:3306)/microwave
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql-data:
