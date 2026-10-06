@@ -1,0 +1,38 @@
+services:
+  mysql:
+    image: mysql:8.0
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: microwave
+      MYSQL_ROOT_PASSWORD: planner
+      MYSQL_USER: planner
+      MYSQL_PASSWORD: planner
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pplanner"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      MYSQL_DSN: "planner:planner@tcp(mysql:3306)/microwave?charset=utf8mb4&collation=utf8mb4_unicode_ci"
+      HTTP_ADDR: ":8080"
+    ports:
+      # The service exposes HTTP only; the database port is not published.
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
